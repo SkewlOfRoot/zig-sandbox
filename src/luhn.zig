@@ -5,7 +5,6 @@ const gpa = generalPurposeAllocator.allocator();
 pub fn main() !void {
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
-
     const stdout = std.io.getStdOut().writer();
 
     // Validate correct number of arguments.
@@ -38,10 +37,12 @@ pub fn main() !void {
 // Validate input bytes - make sure all are numbers.
 fn validateNumbers(input: []u8) bool {
     var num = input;
+    // Ignore the last byte if it's '\r'.
     if (std.mem.endsWith(u8, input, "\r")) {
         num = input[0 .. input.len - 1];
     }
 
+    // Validate false if byte is a non-numeric ASCII value.
     for (num) |n| {
         if (n < '0' or n > '9') {
             return false;
@@ -56,6 +57,7 @@ fn convertToNumbers(allocator: std.mem.Allocator, asciiNumbers: []u8) ![]u8 {
     const numbers = try allocator.alloc(u8, len);
 
     for (0.., asciiNumbers) |i, val| {
+        // Convert ASCII byte to int by subtracting the ASCII value for '0'.
         numbers[i] = val - '0';
     }
     return numbers;
@@ -67,9 +69,12 @@ fn algo(allocator: std.mem.Allocator, numbers: []u8) !u8 {
 
     var i: usize = numbers.len;
     var count: usize = 0;
+    // Iterate through the numbers in reverse order.
     while (i > 0) {
         i -= 1;
         const n = numbers[i];
+        // For every second number, starting with the first, multiply by 2.
+        // Add the digits together if the product is greater or equal to 10.
         if (count % 2 == 0) {
             const product = n * 2;
             if (product >= 10) {
@@ -79,12 +84,15 @@ fn algo(allocator: std.mem.Allocator, numbers: []u8) !u8 {
             } else {
                 newNumbers[i] = product;
             }
-        } else {
+        }
+        // Otherwise, just use the number as is.
+        else {
             newNumbers[i] = n;
         }
         count += 1;
     }
 
+    // Summerize all the numbers together.
     var sum: u8 = 0;
     for (newNumbers) |n| {
         sum += n;
